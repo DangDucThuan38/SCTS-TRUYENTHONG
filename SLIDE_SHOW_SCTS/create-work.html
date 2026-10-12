@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cập nhật Tiến độ Công việc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: white; border-radius: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
+
+<div class="w-full max-w-2xl glass-card p-6 md:p-10">
+    <div class="flex items-center gap-4 mb-8 border-b border-slate-100 pb-5">
+        <button type="button" onclick="goBack()" class="p-2.5 text-slate-500 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm group">
+            <svg class="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+        </button>
+        <div>
+            <h1 id="formTitle" class="text-xl font-bold text-slate-800">Thêm Đầu Việc Mới</h1>
+            <p class="text-slate-400 text-xs mt-0.5">Thiết lập thông tin và tiến độ chi tiết</p>
+        </div>
+    </div>
+
+    <form id="taskForm" onsubmit="handleSubmit(event)" class="space-y-6" autocomplete="off">
+        <input type="hidden" id="taskId" value="">
+        <input type="hidden" id="taskViTri" value="0">
+
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Tên đầu việc <span class="text-red-500">*</span></label>
+            <input type="text" id="tenDauViec" required placeholder="Nhập tên đầu việc cần thực hiện..." class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-all bg-slate-50/50 focus:bg-white">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="relative">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Người phụ trách <span class="text-red-500">*</span></label>
+                <input type="text" id="nguoiPhuTrach" required oninput="onUserSearch()" onfocus="showUserDropdown()" placeholder="Gõ tên để tìm nhân sự..." class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-all bg-slate-50/50 focus:bg-white">
+                
+                <div id="userDropdown" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto custom-scroll">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Phòng ban <span class="text-red-500">*</span></label>
+                <input type="text" id="phongBan" required placeholder="Tự động điền theo nhân sự..." class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-all bg-slate-100 text-slate-600" readonly>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Ngày bắt đầu</label>
+                <input type="date" id="ngayBatDau" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-all bg-slate-50/50 focus:bg-white">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Ngày kết thúc</label>
+                <input type="date" id="ngayKetThuc" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-all bg-slate-50/50 focus:bg-white">
+            </div>
+        </div>
+
+        <div>
+            <div class="flex justify-between items-center mb-2 ml-1">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Tiến độ hiện tại</label>
+                <span id="progressValue" class="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">0%</span>
+            </div>
+            <input type="range" id="tienDoHienTai" min="0" max="100" value="0" oninput="updateProgressLabel(this.value)" class="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Ghi chú</label>
+            <textarea id="ghiChu" rows="3" placeholder="Nhập ghi chú (nếu có)..." class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-all bg-slate-50/50 focus:bg-white resize-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-6">
+            <button type="button" onclick="goBack()" class="px-5 py-3 text-slate-500 font-semibold text-sm rounded-xl hover:bg-slate-100 transition-all">Hủy bỏ</button>
+            <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-lg active:scale-95">Lưu Đầu Việc</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const API_BASE = 'https://localhost:44380/SCTS/TienDoCongViec';
+    
+    // Hàm lấy Site theo thứ tự ưu tiên
+    function getSavedSite() {
+        const userJson = localStorage.getItem('currentUser');
+        if (userJson) {
+            try {
+                const user = JSON.parse(userJson);
+                if (user.site) return user.site;
+            } catch (e) { console.error("Lỗi parse user:", e); }
+        }
+        return localStorage.getItem('selectedSite') || 'SCTS';
+    }
+
+    // Đọc site từ URL, nếu không có thì lấy giá trị ưu tiên từ hàm
+    const urlParams = new URLSearchParams(window.location.search);
+    const CURRENT_SITE = urlParams.get('site') || getSavedSite();
+
+    // Khai báo danh sách nhân sự
+    const staffList = [
+        { name: "Bùi Trung Hiếu", dept: "Giải pháp (Solution)" },
+        { name: "Diên Hoài Dương", dept: "Phòng HCNS" },
+        { name: "Hồ Thu Hiền", dept: "Phòng HCNS" },
+        { name: "Lại Trung Dũng", dept: "Giải pháp (Solution)" },
+        { name: "Lê Quỳnh Giang", dept: "Giải pháp (Solution)" },
+        { name: "Lê Đức Chí Nhân", dept: "Phòng Kế Toán" },
+        { name: "Mai Vương Diệu", dept: "Phòng HCNS" },
+        { name: "Nguyễn Duy Nam", dept: "Dịch vụ IT (ITMS)" },
+        { name: "Nguyễn Nghiêm Hiếu", dept: "Giải pháp (Solution)" },
+        { name: "Nguyễn Ngọc Đức", dept: "Kinh doanh (Sale & Marketing)" },
+        { name: "Nguyễn Nhật Minh", dept: "Giải pháp (Solution)" },
+        { name: "Nguyễn Thị Mai Tiên", dept: "Ban Tổng Giám Đốc" },
+        { name: "Nguyễn Thị Thảo", dept: "Giải pháp (Solution)" },
+        { name: "Nguyễn Thị Thu Thủy", dept: "Giải pháp (Solution)" },
+        { name: "Nguyễn Văn Linh", dept: "Giải pháp (Solution)" },
+        { name: "Nguyễn Đức Anh", dept: "Giải pháp (Solution)" },
+        { name: "Nguyễn Đức Huy", dept: "Giải pháp (Solution)" },
+        { name: "Nguyễn Đức Thái", dept: "Giải pháp (Solution)" },
+        { name: "Phạm Ngọc Thạch", dept: "Phòng Pháp Chế" },
+        { name: "Phan Thị Minh Huyền", dept: "Phòng Kế Toán" },
+        { name: "Thái Thanh Khang", dept: "Dịch vụ IT (ITMS)" },
+        { name: "Trần Hữu Đức", dept: "Vận Hành" },
+        { name: "Trần Thanh Trang", dept: "Giải pháp (Solution)" },
+        { name: "Trần Thị Thanh Huyền", dept: "Phòng HCNS" },
+        { name: "Trần Văn Hòa", dept: "Dịch vụ IT (ITMS)" },
+        { name: "Võ Thành Phúc", dept: "Dịch vụ IT (ITMS)" },
+        { name: "Vũ Mạnh Hà", dept: "Giải pháp (Solution)" },
+        { name: "Đặng Đức Thuần", dept: "Giải pháp (Solution)" },
+        { name: "Đinh Thị Minh Nguyệt", dept: "Ban Tổng Giám Đốc" },
+        { name: "Đỗ Quang Yên", dept: "Ban Điều Hành" },
+        { name: "Đoàn Đạt Duy", dept: "Phòng HCNS" }
+    ];
+
+    function updateProgressLabel(val) {
+        document.getElementById('progressValue').innerText = `${val}%`;
+    }
+
+    // === LOGIC DROPDOWN NHÂN SỰ ===
+    function showUserDropdown() {
+        renderDropdownItems(staffList);
+    }
+
+    function renderDropdownItems(list) {
+        const dropdown = document.getElementById('userDropdown');
+        if(list.length === 0) {
+            dropdown.innerHTML = `<div class="p-3 text-sm text-slate-400 italic">Không tìm thấy nhân sự</div>`;
+        } else {
+            dropdown.innerHTML = list.map(user => `
+                <div onclick="selectUser('${user.name}', '${user.dept}')" class="px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 cursor-pointer flex justify-between items-center transition-colors">
+                    <span class="font-medium text-slate-800">${user.name}</span>
+                    <span class="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">${user.dept}</span>
+                </div>
+            `).join('');
+        }
+        dropdown.classList.remove('hidden');
+    }
+
+    function onUserSearch() {
+        const keyword = document.getElementById('nguoiPhuTrach').value.toLowerCase();
+        const filtered = staffList.filter(u => u.name.toLowerCase().includes(keyword));
+        renderDropdownItems(filtered);
+    }
+
+    function selectUser(name, dept) {
+        document.getElementById('nguoiPhuTrach').value = name;
+        document.getElementById('phongBan').value = dept;
+        hideUserDropdown();
+    }
+
+    function hideUserDropdown() {
+        setTimeout(() => {
+            document.getElementById('userDropdown').classList.add('hidden');
+        }, 200);
+    }
+
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('nguoiPhuTrach').parentElement;
+        if (!container.contains(e.target)) {
+            document.getElementById('userDropdown').classList.add('hidden');
+        }
+    });
+
+    // === XỬ LÝ KHỞI TẠO & KIỂM TRA CHẾ ĐỘ SỬA (EDIT MODE) ===
+    async function checkEditMode() {
+        if (document.activeElement) document.activeElement.blur(); 
+
+        const id = urlParams.get('id');
+
+        if (id) {
+            document.getElementById('formTitle').innerText = "Cập Nhật Tiến Độ Công Việc";
+            try {
+                // Thêm tham số site vào API lấy thông tin để chỉnh sửa công việc
+                const res = await fetch(`${API_BASE}/get-tiendo?site=${encodeURIComponent(CURRENT_SITE)}`, { 
+                    method: 'GET', 
+                    headers: { 'accept': '*/*' } 
+                });
+                if (!res.ok) throw new Error();
+                const tasks = await res.json();
+                const currentTask = tasks.find(x => x.id == id);
+
+                if (currentTask) {
+                    document.getElementById('taskId').value = currentTask.id;
+                    document.getElementById('taskViTri').value = currentTask.viTri || "0";
+                    document.getElementById('tenDauViec').value = currentTask.tenDauViec || "";
+                    document.getElementById('nguoiPhuTrach').value = currentTask.nguoiPhuTrach || "";
+                    document.getElementById('phongBan').value = currentTask.phongBan || "";
+                    document.getElementById('ghiChu').value = currentTask.ghiChu || "";
+                    
+                    if (currentTask.ngayBatDau) document.getElementById('ngayBatDau').value = currentTask.ngayBatDau.split('T')[0];
+                    if (currentTask.ngayKetThuc) document.getElementById('ngayKetThuc').value = currentTask.ngayKetThuc.split('T')[0];
+
+                    const progress = currentTask.tienDoHienTai || 0;
+                    document.getElementById('tienDoHienTai').value = progress;
+                    updateProgressLabel(progress);
+                }
+            } catch (err) { alert("Lỗi tải dữ liệu gốc từ API!"); }
+        }
+    }
+
+    // === API POST: save-tiendo ===
+    async function handleSubmit(e) {
+        e.preventDefault();
+
+        const idValue = document.getElementById('taskId').value;
+        const viTriValue = document.getElementById('taskViTri').value;
+
+        if (document.activeElement) document.activeElement.blur();
+
+        const payload = {
+            id: idValue || "",
+            tenDauViec: document.getElementById('tenDauViec').value,
+            nguoiPhuTrach: document.getElementById('nguoiPhuTrach').value,
+            phongBan: document.getElementById('phongBan').value,
+            ngayBatDau: document.getElementById('ngayBatDau').value ? new Date(document.getElementById('ngayBatDau').value).toISOString() : null,
+            ngayKetThuc: document.getElementById('ngayKetThuc').value ? new Date(document.getElementById('ngayKetThuc').value).toISOString() : null,
+            tienDoHienTai: parseInt(document.getElementById('tienDoHienTai').value),
+            ghiChu: document.getElementById('ghiChu').value,
+            viTri: viTriValue ? viTriValue.toString() : "0" 
+        };
+
+        try {
+            // Đính kèm ?site= vào Query String của hàm Post theo đúng thiết kế C# [FromQuery] string site
+            const url = `${API_BASE}/save-tiendo?site=${encodeURIComponent(CURRENT_SITE)}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'accept': '*/*' 
+                },
+                body: JSON.stringify(payload) 
+            });
+
+            if (response.ok) {
+                alert("Lưu thông tin tiến độ thành công!");
+                goBack();
+            } else {
+                const errorData = await response.json();
+                console.error("Chi tiết lỗi hệ thống:", errorData);
+                
+                if(errorData.errors && errorData.errors.item) {
+                     const retryResponse = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'accept': '*/*' },
+                        body: JSON.stringify({ item: payload }) 
+                     });
+                     if(retryResponse.ok) {
+                         alert("Lưu thông tin tiến độ thành công!");
+                         goBack();
+                         return;
+                     }
+                }
+                alert("Không thể lưu dữ liệu, vui lòng kiểm tra bảng Console Log!");
+            }
+        } catch (error) { 
+            console.error("Lỗi kết nối:", error);
+            alert("Lỗi kết nối đến máy chủ server!"); 
+        }
+    }
+
+    // Hàm hỗ trợ quay lại danh sách công việc và giữ nguyên tham số site
+    function goBack() {
+        location.href = `work.html?site=${encodeURIComponent(CURRENT_SITE)}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', checkEditMode);
+</script>
+</body>
+</html>

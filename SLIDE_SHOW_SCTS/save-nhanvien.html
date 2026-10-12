@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Nhân viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .form-card { background: white; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-lg">
+    <button onclick="location.href='list-nhanvien.html'" class="mb-6 flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Quay lại danh sách
+    </button>
+
+    <div class="form-card p-8 border border-slate-100">
+        <div class="text-center mb-8">
+            <h1 id="formTitle" class="text-2xl font-bold text-slate-800">Thông Tin Nhân Viên</h1>
+            <p class="text-slate-500 text-sm mt-2">Cập nhật thông tin và ngày sinh nhật</p>
+        </div>
+
+        <form id="employeeForm" class="space-y-5">
+            <input type="hidden" id="employeeId">
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Họ và tên</label>
+                <input type="text" id="hoTen" required placeholder="Nhập tên nhân viên..."
+                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Ngày sinh</label>
+                    <input type="date" id="ngaySinh" required
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Phòng ban / Bộ phận</label>
+                    <select id="phongBan" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white cursor-pointer"></select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Ghi chú</label>
+                <textarea id="ghiChu" rows="3" placeholder="Thông tin bổ sung..."
+                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"></textarea>
+            </div>
+
+            <div id="error-msg" class="hidden p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-100"></div>
+
+            <button type="submit" id="submitBtn"
+                class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98]">
+                Lưu nhân viên
+            </button>
+        </form>
+    </div>
+</div>
+
+<script src="env.js"></script>
+<script src="common.js"></script>
+<script>
+    const $ = (id) => document.getElementById(id);
+    const editId = new URLSearchParams(location.search).get('id');
+    const submitBtn = $('submitBtn');
+    const errorMsg = $('error-msg');
+
+    $('phongBan').innerHTML = optionsHtml(ENV.DEPARTMENTS);
+
+    function showError(text) {
+        errorMsg.innerText = text;
+        errorMsg.classList.remove('hidden');
+    }
+
+    async function initForm() {
+        if (!editId) {
+            $('formTitle').innerText = 'Thêm Nhân Viên Mới';
+            return; // id để trống cho server tự sinh
+        }
+
+        $('formTitle').innerText = 'Chỉnh Sửa Nhân Viên';
+        submitBtn.innerText = 'Cập nhật thông tin';
+
+        try {
+            const employees = await (await fetch(ENV.LOCAL.NHANVIEN)).json();
+            const emp = employees.find(e => e.Id == editId);
+            if (!emp) return;
+
+            $('employeeId').value = emp.Id;
+            $('hoTen').value = emp.HoTen;
+            $('phongBan').value = emp.PhongBan;
+            $('ghiChu').value = emp.GhiChu || '';
+            if (emp.NgaySinh) $('ngaySinh').value = toDateInput(emp.NgaySinh);
+        } catch (err) {
+            console.error('Không thể tải dữ liệu nhân viên:', err);
+        }
+    }
+
+    $('employeeForm').onsubmit = async (e) => {
+        e.preventDefault();
+        errorMsg.classList.add('hidden');
+        submitBtn.disabled = true;
+        const originalText = submitBtn.innerText;
+        submitBtn.innerText = 'Đang xử lý...';
+
+        const body = {
+            id: $('employeeId').value,
+            hoTen: $('hoTen').value,
+            ngaySinh: $('ngaySinh').value,
+            phongBan: $('phongBan').value,
+            ghiChu: $('ghiChu').value
+        };
+
+        try {
+            const res = await apiFetch(ENV.API.SAVE_NHANVIEN, { method: 'POST', body, withSite: false });
+            const result = await res.json();
+
+            if (res.ok) {
+                alert(editId ? 'Cập nhật thành công!' : 'Thêm nhân viên mới thành công!');
+                location.href = 'list-nhanvien.html';
+            } else {
+                showError(result.message || 'Lỗi khi lưu dữ liệu!');
+            }
+        } catch {
+            showError('Không thể kết nối đến Server (API)!');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalText;
+        }
+    };
+
+    initForm();
+</script>
+</body>
+</html>

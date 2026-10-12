@@ -1,0 +1,79 @@
+[
+  {
+    "Id": "e764d2f9-17c4-4f52-b83f-00a44a4f2c06",
+    "TenDauViec": "TEST",
+    "NguoiPhuTrach": "Bùi Trung Hiếu",
+    "NgayBatDau": "2026-06-24T00:00:00Z",
+    "NgayKetThuc": "2026-06-24T00:00:00Z",
+    "TienDoHienTai": 50,
+    "GhiChu": "TEST",
+    "PhongBan": "Giải pháp (Solution)",
+    "ViTri": "1"
+  },
+  {
+    "Id": "a464ff76-5add-4e42-abb4-174ea09ec09f",
+    "TenDauViec": "ádasdasd",
+    "NguoiPhuTrach": "Nguyễn Nghiêm Hiếu",
+    "NgayBatDau": "2026-06-25T00:00:00Z",
+    "NgayKetThuc": "2026-06-27T00:00:00Z",
+    "TienDoHienTai": 61,
+    "GhiChu": "",
+    "PhongBan": "Giải pháp (Solution)",
+    "ViTri": "2"
+  },
+  {
+    "Id": "9fbe5d59-b29b-4d88-94bd-a77f5bb39929",
+    "TenDauViec": "ádsad",
+    "NguoiPhuTrach": "Diên Hoài Dương",
+    "NgayBatDau": "2026-06-12T00:00:00Z",
+    "NgayKetThuc": "2026-06-24T00:00:00Z",
+    "TienDoHienTai": 69,
+    "GhiChu": "ádasdas",
+    "PhongBan": "Phòng HCNS",
+    "ViTri": "3"
+  },
+  {
+    "Id": "fab3cc1c-dc71-4c10-8ebb-bbd000cccfff",
+    "TenDauViec": "213213",
+    "NguoiPhuTrach": "Diên Hoài Dương",
+    "NgayBatDau": "2026-06-26T00:00:00Z",
+    "NgayKetThuc": "2026-06-26T00:00:00Z",
+    "TienDoHienTai": 79,
+    "GhiChu": "",
+    "PhongBan": "Phòng HCNS",
+    "ViTri": "4"
+  },
+  {
+    "Id": "83cb2bc4-fca7-4ddb-85a9-3ee4001ee46a",
+    "TenDauViec": "12321213",
+    "NguoiPhuTrach": "Lê Quỳnh Giang",
+    "NgayBatDau": "2026-06-25T00:00:00Z",
+    "NgayKetThuc": "2026-07-01T00:00:00Z",
+    "TienDoHienTai": 70,
+    "GhiChu": "",
+    "PhongBan": "Giải pháp (Solution)",
+    "ViTri": "5"
+  },
+  {
+    "Id": "02ea0791-5fce-406e-bc86-823b5bae4f9f",
+    "TenDauViec": "213213213213",
+    "NguoiPhuTrach": "Lê Quỳnh Giang",
+    "NgayBatDau": "2026-07-01T00:00:00Z",
+    "NgayKetThuc": "2026-07-08T00:00:00Z",
+    "TienDoHienTai": 75,
+    "GhiChu": "",
+    "PhongBan": "Giải pháp (Solution)",
+    "ViTri": "6"
+  },
+  {
+    "Id": "3ea830e7-acf7-44d8-845d-a9f7c09c0f07",
+    "TenDauViec": "1",
+    "NguoiPhuTrach": "1",
+    "NgayBatDau": "2026-06-24T00:00:00Z",
+    "NgayKetThuc": "2026-06-25T00:00:00Z",
+    "TienDoHienTai": 59,
+    "GhiChu": "",
+    "PhongBan": "",
+    "ViTri": "7"
+  }
+]

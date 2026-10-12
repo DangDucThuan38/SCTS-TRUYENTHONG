@@ -1,0 +1,26 @@
+[
+  {
+    "Site": "ALL",
+    "Ten": "admin",
+    "MatKhau": "12345678",
+    "Role": "1"
+  },
+  {
+    "Site": "ALL",
+    "Ten": "truyenthong",
+    "MatKhau": "12345678",
+    "Role": "3"
+  },
+  {
+    "Site": "ALL",
+    "Ten": "quanso",
+    "MatKhau": "12345678",
+    "Role": "2"
+  },
+  {
+    "Site": "ALL",
+    "Ten": "quanly",
+    "MatKhau": "12345678",
+    "Role": "4"
+  }
+]

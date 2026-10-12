@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Tài Khoản</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .form-card { background: white; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+    <button onclick="location.href='listuser.html'" class="mb-6 flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Quay lại danh sách
+    </button>
+
+    <div class="form-card p-8 border border-slate-100">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-slate-800">Tạo Tài Khoản Mới</h1>
+            <p class="text-slate-500 text-sm mt-2">Thiết lập quyền truy cập cho nhân viên mới</p>
+        </div>
+
+        <form id="createUserForm" class="space-y-5">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Tên đăng nhập</label>
+                <input type="text" id="ten" required placeholder="ví dụ: nguyenvan_a"
+                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Mật khẩu</label>
+                <input type="password" id="matkhau" required placeholder="••••••••"
+                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Vai trò hệ thống</label>
+                <select id="role" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white appearance-none cursor-pointer"></select>
+            </div>
+
+            <div id="error-msg" class="hidden p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-100"></div>
+
+            <button type="submit" id="submitBtn"
+                class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98]">
+                Xác nhận tạo
+            </button>
+        </form>
+    </div>
+</div>
+
+<script src="env.js"></script>
+<script src="common.js"></script>
+<script>
+    const user = requireAuth(['1']);
+
+    const $ = (id) => document.getElementById(id);
+    const errorMsg = $('error-msg');
+    const submitBtn = $('submitBtn');
+
+    // Chỉ cho chọn 4 vai trò có thể tạo mới (role 5 không dùng khi tạo)
+    $('role').innerHTML = ['1', '2', '3', '4']
+        .map(r => `<option value="${r}">${roleName(r)}</option>`).join('');
+
+    function showError(text) {
+        errorMsg.innerText = text;
+        errorMsg.classList.remove('hidden');
+    }
+
+    $('createUserForm').onsubmit = async (e) => {
+        e.preventDefault();
+        errorMsg.classList.add('hidden');
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Đang xử lý...';
+
+        const body = {
+            ten: $('ten').value.trim(),
+            matkhau: $('matkhau').value.trim(),
+            role: $('role').value
+        };
+
+        try {
+            const res = await apiFetch(ENV.API.CREATE_USER, { method: 'POST', body });
+            const result = await res.json();
+
+            if (res.ok) {
+                alert(`Thành công! Tài khoản mới đã được thêm vào hệ thống ${user.site}.`);
+                location.href = 'listuser.html';
+            } else {
+                showError(result.message || 'Không thể tạo tài khoản!');
+            }
+        } catch (err) {
+            console.error(err);
+            showError('Lỗi kết nối Server! Vui lòng kiểm tra lại Backend.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Xác nhận tạo';
+        }
+    };
+</script>
+</body>
+</html>

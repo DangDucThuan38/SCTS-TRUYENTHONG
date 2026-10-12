@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theo dõi Tiến độ Công việc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: white; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .sortable-ghost { background-color: #f1f5f9 !important; opacity: 0.5; }
+        .sortable-drag { background: white !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .drag-handle { cursor: grab; color: #cbd5e1; }
+        .drag-handle:active { cursor: grabbing; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div class="flex items-center gap-4">
+            <button onclick="goBackHome()" class="p-2.5 text-slate-500 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm group">
+                <svg class="w-6 h-6 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+            </button>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Tiến độ Công việc</h1>
+                <p class="text-slate-500 text-sm">Quản lý hiệu suất và tiến trình</p>
+            </div>
+        </div>
+
+        <button onclick="goToCreate()" class="flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-200 active:scale-95">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Thêm Đầu Việc Mới
+        </button>
+    </div>
+
+    <div class="glass-card p-4 mb-6 flex flex-wrap gap-4 items-end">
+        <div class="flex-1 min-w-[250px]">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Tìm kiếm</label>
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Tên đầu việc, người phụ trách..." class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+        </div>
+        <div class="w-full md:w-48">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Phòng ban</label>
+            <input type="text" id="deptFilter" onkeyup="filterTable()" placeholder="Phòng ban..." class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+        </div>
+        <div class="w-full md:w-48">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Trạng thái Tiến độ</label>
+            <select id="statusFilter" onchange="filterTable()" class="w-full px-4 py-2 rounded-lg border border-slate-200 outline-none text-sm bg-white">
+                <option value="">Tất cả</option>
+                <option value="not_started">Chưa bắt đầu (0%)</option>
+                <option value="in_progress">Đang thực hiện (1% - 99%)</option>
+                <option value="completed">Đã hoàn thành (100%)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="glass-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-100">
+                        <th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase text-center w-12">Sắp xếp</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Tên đầu việc</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Phụ trách / Phòng ban</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Thời gian</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase w-64">Tiến độ</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Ghi chú / Tình trạng</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="taskTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+const API_BASE = 'https://localhost:44380/SCTS/TienDoCongViec';
+    
+    // Hàm lấy Site theo thứ tự ưu tiên (User đăng nhập -> Site chọn thủ công -> Mặc định 'SCTS')
+    function getSavedSite() {
+        const userJson = localStorage.getItem('currentUser');
+        if (userJson) {
+            try {
+                const user = JSON.parse(userJson);
+                if (user.site) return user.site;
+            } catch (e) { console.error("Lỗi parse user:", e); }
+        }
+        return localStorage.getItem('selectedSite') || 'SCTS';
+    }
+
+    // Đọc từ URL trước, nếu URL không có param '?site=' thì mới dùng kết quả của hàm getSavedSite()
+    const urlParams = new URLSearchParams(window.location.search);
+    const CURRENT_SITE = urlParams.get('site') || getSavedSite();
+    
+    let allTasks = [];
+
+    async function loadData() {
+        // Chủ động đóng và bỏ focus các phần tử dropdown/input khi bắt đầu tải dữ liệu mới
+        if (document.activeElement) document.activeElement.blur();
+
+        const tbody = document.getElementById('taskTableBody');
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">Đang tải dữ liệu tiến độ...</td></tr>`;
+
+        try {
+            // Gửi kèm query param ?site= lên API
+            const response = await fetch(`${API_BASE}/get-tiendo?site=${encodeURIComponent(CURRENT_SITE)}`, {
+                method: 'GET',
+                headers: { 'accept': '*/*' }
+            });
+            if (!response.ok) throw new Error();
+            allTasks = await response.json();
+            renderTable(allTasks);
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 italic">Không thể kết nối API hoặc dữ liệu trống.</td></tr>`;
+        }
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('taskTableBody');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 italic">Danh sách tiến độ trống</td></tr>`;
+            return;
+        }
+
+        data.sort((a, b) => parseInt(a.viTri || 0) - parseInt(b.viTri || 0));
+        const now = new Date();
+
+        tbody.innerHTML = data.map(item => {
+            const progress = item.tienDoHienTai || 0;
+            const progressColor = progress === 100 ? 'bg-emerald-500' : (progress === 0 ? 'bg-slate-300' : 'bg-blue-500');
+            
+            let statusBadge = '';
+            if (progress === 100) {
+                statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 mb-1">✓ Đã hoàn thành</span>`;
+            } else if (item.ngayKetThuc) {
+                const deadline = new Date(item.ngayKetThuc);
+                if (now > deadline) {
+                    statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800 mb-1 animate-pulse">⚠️ Chậm tiến độ</span>`;
+                } else {
+                    statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 mb-1">⏳ Chưa hoàn thành</span>`;
+                }
+            } else {
+                statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 mb-1">⏳ Chưa hoàn thành</span>`;
+            }
+
+            const textGhiChu = item.ghiChu ? `<div class="text-xs text-slate-500 mt-0.5 break-words max-w-xs">${item.ghiChu}</div>` : '';
+
+            return `
+                <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100" data-id="${item.id}">
+                    <td class="px-4 py-4 text-center">
+                        <div class="drag-handle text-slate-300 hover:text-blue-500 transition-colors inline-block">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                            </svg>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 font-semibold text-slate-800 max-w-xs whitespace-normal break-words">${item.tenDauViec || ''}</td>
+                    <td class="px-6 py-4 text-slate-600">
+                        <div class="font-medium text-slate-700">${item.nguoiPhuTrach || ''}</div>
+                        <div class="text-xs text-slate-400">${item.phongBan || ''}</div>
+                    </td>                
+                    <td class="px-6 py-4 text-slate-600 text-xs">
+                        <div class="flex flex-col gap-1">
+                            <div><span class="text-slate-400">Bắt đầu:</span> ${formatDate(item.ngayBatDau)}</div>
+                            <div><span class="text-slate-400">Kết thúc:</span> ${formatDate(item.ngayKetThuc)}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="w-full flex items-center gap-3">
+                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                <div class="${progressColor} h-2.5 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
+                            </div>
+                            <span class="text-xs font-bold text-slate-600 min-w-[32px] text-right">${progress}%</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col items-start">
+                            ${statusBadge}
+                            ${textGhiChu}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                        <button onclick="location.href='create-work.html?site=${encodeURIComponent(CURRENT_SITE)}&id=${item.id}'" class="text-blue-500 hover:text-blue-700 font-medium mx-2 transition-transform active:scale-95">Sửa</button>
+                        <button onclick="deleteItem('${item.id}')" class="text-red-400 hover:text-red-600 font-medium mx-2 transition-transform active:scale-95">Xóa</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        initSortable();
+    }
+
+    function initSortable() {
+        const el = document.getElementById('taskTableBody');
+        if (!el || typeof Sortable === 'undefined') return;
+
+        Sortable.create(el, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: async function (evt) {
+                const id = evt.item.getAttribute('data-id');
+                const oldIndex = evt.oldIndex;
+                const newIndex = evt.newIndex;
+
+                if (oldIndex === newIndex) return;
+
+                const direction = newIndex < oldIndex ? 'up' : 'down';
+                const steps = Math.abs(newIndex - oldIndex);
+
+                evt.item.style.opacity = '0.5';
+                await handlePositionChange(id, direction, steps);
+                evt.item.style.opacity = '1';
+                
+                loadData(); 
+            }
+        });
+    }
+
+    async function handlePositionChange(id, direction, steps) {
+        for (let i = 0; i < steps; i++) {
+            try {
+                // Thêm tham số site vào API đổi vị trí
+                const url = `${API_BASE}/change-position?site=${encodeURIComponent(CURRENT_SITE)}&id=${id}&direction=${direction}`;
+                const response = await fetch(url, { method: 'POST', headers: { 'accept': '*/*' } });
+                if (!response.ok) break;
+            } catch (err) {
+                console.error("Lỗi đổi vị trí:", err);
+                break;
+            }
+        }
+    }
+
+    async function deleteItem(id) {
+        if (!confirm("Bạn có chắc chắn muốn xóa đầu việc này?")) return;
+        try {
+            // Thay đổi cấu trúc gọi API xóa dạng Query theo đúng Controller mới: ?site=xxx&id=yyy
+            const url = `${API_BASE}/delete-tiendo?site=${encodeURIComponent(CURRENT_SITE)}&id=${id}`;
+            const res = await fetch(url, { method: 'DELETE', headers: { 'accept': '*/*' } });
+            if (res.ok) {
+                loadData();
+            } else {
+                alert("Xóa thất bại!");
+            }
+        } catch (err) { alert("Lỗi kết nối máy chủ!"); }
+    }
+
+    function goBackHome() { location.href = `home.html?site=${encodeURIComponent(CURRENT_SITE)}`; }
+    
+    // Khi bấm nút "Thêm đầu việc mới", truyền theo site hiện tại sang màn hình nhập liệu
+    function goToCreate() { location.href = `create-work.html?site=${encodeURIComponent(CURRENT_SITE)}`; }
+
+    function filterTable() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const dept = document.getElementById('deptFilter').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+
+        const filtered = allTasks.filter(x => {
+            const matchSearch = (x.tenDauViec || '').toLowerCase().includes(search) || (x.nguoiPhuTrach || '').toLowerCase().includes(search);
+            const matchDept = (x.phongBan || '').toLowerCase().includes(dept);
+            
+            let matchStatus = true;
+            const progress = x.tienDoHienTai || 0;
+            if (status === "not_started") matchStatus = (progress === 0);
+            else if (status === "in_progress") matchStatus = (progress > 0 && progress < 100);
+            else if (status === "completed") matchStatus = (progress === 100);
+
+            return matchSearch && matchDept && matchStatus;
+        });
+        renderTable(filtered);
+    }
+
+    function formatDate(d) {
+        if (!d) return '--/--/----';
+        const date = new Date(d);
+        return isNaN(date.getTime()) ? '--/--/----' : date.toLocaleDateString('vi-VN');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>

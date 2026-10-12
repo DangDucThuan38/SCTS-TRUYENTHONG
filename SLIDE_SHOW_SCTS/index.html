@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>SLIDE SYSTEM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- 1. THIẾT LẬP NỀN TẢNG (RESET) --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+        }
+
+        #main-container {
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- 2. QUẢN LÝ SLIDE --- */
+        .slide {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            z-index: 1;
+            transition: opacity 1s ease-in-out, visibility 1s;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+
+        .slide img,
+        .slide video,
+        .full-screen-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* --- 3. SLIDE BÁO CÁO QUÂN SỐ --- */
+        .slide-report {
+            background: url('image/solieu_view.jpg') no-repeat center center;
+            background-size: cover;
+        }
+
+        .overlay-content {
+            background: rgba(2, 6, 23, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 60px;
+            width: 90%;
+            max-width: 1100px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .ov-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 40px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .ov-row {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        .ov-label {
+            font-size: 1.5rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .ov-value {
+            font-size: 6rem;
+            font-weight: 950;
+            color: #38bdf8;
+            line-height: 1;
+            margin: 10px 0;
+            text-shadow: 0 0 30px rgba(56, 189, 248, 0.6), 0 0 60px rgba(56, 189, 248, 0.3);
+        }
+
+        .ov-note {
+            color: rgba(251, 191, 36, 0.8);
+            font-weight: 200;
+            font-style: italic;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- 4. SLIDE LỊCH CÔNG TÁC (LIGHT STYLE) --- */
+        .slide-schedule {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .sched-header {
+            font-size: 2.5rem;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .sched-header i {
+            color: #2563eb;
+        }
+
+        .sched-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 12px;
+            table-layout: fixed;
+        }
+
+        .col-noidung {
+            width: 35%;
+        }
+
+        .col-nhansu {
+            width: 20%;
+        }
+
+        .col-diadiem {
+            width: 15%;
+        }
+
+        .col-thoigian {
+            width: 30%;
+        }
+
+        .sched-table th {
+            font-size: 1.1rem;
+            color: #64748b;
+            text-transform: uppercase;
+            padding: 0 20px 10px;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .sched-row td {
+            padding: 16px 20px;
+            background: #ffffff;
+            vertical-align: middle;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .sched-row td:first-child {
+            border-left: 8px solid #2563eb;
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .sched-row td:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .sched-content-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-1 {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-2 {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-3 {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .sched-body-wrapper {
+            width: 100%;
+            height: 650px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .scroll-animate {
+            display: table-row-group;
+            animation: marqueeVertical 25s linear infinite;
+        }
+
+        @keyframes marqueeVertical {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(-50%);
+            }
+        }
+
+        .time-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            opacity: 0.9;
+        }
+
+        .time-row {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .time-row span:nth-child(2) {
+            font-size: 0.9rem;
+            min-width: 30px;
+        }
+
+        .info-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        /* --- 5. SLIDE 4: TIẾN ĐỘ CÔNG VIỆC (PREMIUM LIGHT STYLE) --- */
+        .slide-task-progress {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 40px 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .task-header {
+            font-size: 2.5rem;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .task-header i {
+            color: #2563eb;
+        }
+
+        /* Tiêu đề bảng của slide tiến độ */
+        .slide-task-progress .sched-table th {
+            font-size: 1.1rem;
+            color: #64748b;
+            text-transform: uppercase;
+            padding: 0 20px 10px;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        /* Thẻ dòng công việc được làm bé lại và đổi nền sáng */
+        .task-card-row td {
+            padding: 12px 20px;
+            /* Thu nhỏ padding để list bé đi */
+            background: #ffffff;
+            vertical-align: middle;
+            font-size: 1.15rem;
+            /* Font chữ nhỏ hơn gọn gàng */
+            color: #334155;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: none;
+        }
+
+        .task-card-row td:first-child {
+            border-left: 8px solid #2563eb;
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .task-card-row td:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .task-title-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Thanh tiến trình màu sáng tinh tế */
+        .progress-track {
+            width: 100%;
+            background: #e2e8f0;
+            height: 10px;
+            /* Thu mảnh thanh tiến trình lại */
+            border-radius: 50px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 50px;
+            box-shadow: none;
+        }
+
+        /* Badge trạng thái cho style sáng */
+        .task-badge {
+            display: inline-flex;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .task-badge-done {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .task-badge-delay {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .task-badge-pending {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        /* --- 6. CÁC THÀNH PHẦN ĐIỀU HƯỚNG --- */
+        .time-indicator {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 1001;
+        }
+
+        #time-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #6366f1, #0ea5e9, #22c55e);
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.8);
+            transition: width linear;
+        }
+
+        .site-selector {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+        }
+
+        .site-select-btn {
+            background: rgba(15, 23, 42, 0.8);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 25px;
+            border-radius: 15px;
+            font-weight: 700;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="site-selector">
+        <select id="siteChange" class="site-select-btn" onchange="changeSite(this.value)">
+            <option value="ALL">ALL</option>
+            <option value="HLV">HLV</option>
+            <option value="SCTS">SCTS</option>
+            <option value="ASN">ASN</option>
+            <option value="SULECO">SULECO</option>
+            <option value="MYSON">Mỹ Sơn</option>
+        </select>
+    </div>
+
+    <div class="slideshow-wrapper" id="main-container"></div>
+    <div class="time-indicator">
+        <div class="time-indicator-fill" id="time-bar"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const CURRENT_SITE = urlParams.get('site') || localStorage.getItem('lastSite') || 'SCTS';
+        document.getElementById('siteChange').value = CURRENT_SITE;
+
+        const CONFIG = {
+            API_BASE: 'https://truyenthong.scts.com.vn:8036/TruyenThong',
+            API_TASK: 'https://truyenthong.scts.com.vn:8036/SCTS/TienDoCongViec',
+            DEFAULT_DUR: 13,
+            REPORT_DUR: 13,
+            SCHED_DUR: 13,
+            TASK_DUR: 30
+        };
+
+        let currentIndex = 0;
+        let allSlides = [];
+        let slideTimeout;
+
+        function changeSite(newSite) {
+            document.getElementById('siteChange').blur();
+            localStorage.setItem('lastSite', newSite);
+            window.location.href = `?site=${newSite}`;
+        }
+
+        function formatFullDateTime(dateStr) {
+            if (!dateStr) return "--:-- --/--/----";
+            const d = new Date(dateStr);
+            return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) +
+                " " + d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function formatSimpleDate(dateStr) {
+            if (!dateStr) return '--/--/----';
+            const d = new Date(dateStr);
+            return isNaN(d.getTime()) ? '--/--/----' : d.toLocaleDateString('vi-VN');
+        }
+
+        async function initSystem() {
+            const container = document.getElementById('main-container');
+            container.innerHTML = "";
+
+            try {
+                const [resQuanso, resSched, resMedia, resTasks] = await Promise.all([
+                    fetch(`${CONFIG.API_BASE}/get?site=${CURRENT_SITE}`).then(r => r.json()).catch(() => []),
+                    fetch(`${CONFIG.API_BASE}/get-congtac?site=${CURRENT_SITE}`).then(r => r.json()).catch(() => []),
+                    fetch(`${CONFIG.API_BASE}/get-media-list?site=${CURRENT_SITE}`).then(r => r.json()).catch(() => []),
+                    fetch(`${CONFIG.API_TASK}/get-tiendo?site=${CURRENT_SITE}`).then(r => r.json()).catch(() => [])
+                ]);
+
+
+               if (Array.isArray(resTasks) && resTasks.length > 0) {
+    // Sắp xếp danh sách ban đầu
+    resTasks.sort((a, b) => parseInt(a.viTri || 0) - parseInt(b.viTri || 0));
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const slideTask = document.createElement("div");
+    slideTask.className = "slide slide-task-progress";
+
+    // ==================== KHUNG HTML CHÍNH & DROPDOWN ====================
+    slideTask.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1100px; margin: 0 auto 18px auto; gap: 12px;">
+                <h1 class="task-header" style="margin: 0;">
+                    <i class="fa-solid fa-bars-progress"></i> TIẾN ĐỘ CÔNG VIỆC ${CURRENT_SITE}
+                </h1>
+                
+                <div>
+                    <select id="departmentFilter" style="padding: 10px 16px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 700; font-size: 0.95rem; color: #334155; background-color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); cursor: pointer; outline: none; min-width: 240px;">
+                        <option value="all">🔍Phòng Ban</option>
+                        <option value="Giải pháp (Solution)">Giải pháp</option>
+                        <option value="Phòng HCNS">HCNS</option>
+                        <option value="Phòng Kế Toán">Kế Toán</option>
+                        <option value="Dịch vụ IT (ITMS)">ITMS</option>
+                        <option value="Kinh doanh (Sale & Marketing)">Kinh doanh</option>
+                        <option value="Ban Tổng Giám Đốc">Ban GĐ</option>
+                        <option value="Phòng Pháp Chế">Pháp Chế</option>
+                        <option value="Vận Hành">Vận Hành</option>
+                        <option value="Ban Điều Hành">Điều Hành</option>
+                    </select>
+                </div>
+            </div>
+
+        <div id="statsContainer" style="width:100%; max-width:1100px; margin-bottom:18px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;"></div>
+
+        <div style="width:100%; max-width:100%; padding:0 20px;">
+            <table class="sched-table" style="width:100%; table-layout:fixed;">
+                <thead>
+                    <tr>
+                        <th style="width:4%;">STT</th>
+                        <th style="width:23%;">Nội dung công việc</th>
+                        <th style="width:14%;">Trạng thái</th>
+                        <th style="width:13%;">Phụ trách</th>
+                        <th style="width:16%;">Tiến độ</th>
+                        <th style="width:11%;">Thời hạn</th>
+                        <th style="width:27%;">Ghi chú</th>
+                    </tr>
+                </thead>
+            </table>
+            <div class="sched-body-wrapper" style="height:calc(100vh - 285px); overflow:hidden; position:relative; margin-top:8px;">
+                <table class="sched-table" style="width:100%; table-layout:fixed;">
+                    <tbody id="taskTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>`;
+
+    // ==================== TẠO DÒNG BẢNG ====================
+    const createTaskRow = (task, index) => {
+        const progress = parseInt(task.tienDoHienTai || 0);
+        const deadlineStr = task.ngayKetThuc;
+        let statusHTML = "";
+
+        if (progress === 100) {
+            statusHTML = `<span style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; padding:8px 16px; border-radius:9999px; font-weight:700; font-size:0.95rem; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(16,185,129,0.4);"><i class="fa-solid fa-circle-check"></i> HOÀN THÀNH</span>`;
+        } else if (deadlineStr) {
+            const deadline = new Date(deadlineStr);
+            deadline.setHours(0, 0, 0, 0);
+
+            if (deadline < today && progress < 100) {
+                statusHTML = `<span style="background:linear-gradient(135deg,#ef4444,#f87171); color:#fff; padding:8px 16px; border-radius:9999px; font-weight:700; font-size:0.95rem; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(239,68,68,0.4);"><i class="fa-solid fa-triangle-exclamation"></i> CHẬM TIẾN ĐỘ</span>`;
+            } else if (progress > 0) {
+                statusHTML = `<span style="background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; padding:8px 16px; border-radius:9999px; font-weight:700; font-size:0.95rem; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(59,130,246,0.4);"><i class="fa-solid fa-play"></i> ĐANG THỰC HIỆN</span>`;
+            } else {
+                statusHTML = `<span style="background:linear-gradient(135deg,#64748b,#94a3b8); color:#fff; padding:8px 16px; border-radius:9999px; font-weight:700; font-size:0.95rem; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(100,116,139,0.4);"><i class="fa-solid fa-clock"></i> CHƯA BẮT ĐẦU</span>`;
+            }
+        } else {
+            statusHTML = `<span style="background:#64748b; color:#fff; padding:8px 16px; border-radius:9999px; font-weight:700; font-size:0.95rem; display:inline-flex; align-items:center; gap:6px;"><i class="fa-solid fa-clock"></i> CHƯA BẮT ĐẦU</span>`;
+        }
+
+        return `
+            <tr class="task-card-row">
+                <td style="width:4%; text-align:center; font-weight:800; color:#1e293b; font-size:1.1rem;">${index}</td>
+                <td style="width:23%;">
+                    <div style="font-weight:600; font-size:1.08rem; color:#1e293b; line-height:1.4;">${task.tenDauViec || "Không có tên công việc"}</div>
+                </td>
+                <td style="width:14%; text-align:center;">${statusHTML}</td>
+                <td style="width:13%;">
+                    <div style="display:flex; align-items:center; gap:8px; color:#334155;">
+                        <i class="fa-solid fa-user" style="color:#2563eb;"></i>
+                        <div>
+                            <div style="font-weight:600;">${task.nguoiPhuTrach || ""}</div>
+                            <div style="font-size:0.85rem; color:#64748b;">${task.phongBan || ""}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="width:16%;">
+                    <div style="margin-bottom:6px;">
+                        <div class="progress-track" style="height:11px; background:#e2e8f0; border-radius:9999px; overflow:hidden;">
+                            <div class="progress-fill" style="width:${progress}%; height:100%; background:linear-gradient(90deg, #2563eb, #3b82f6);"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.95rem; font-weight:700; color:#1e40af;">
+                        <span style="color:#64748b;">Tiến độ</span>
+                        <span>${progress}%</span>
+                    </div>
+                </td>
+                <td style="width:11%; font-size:0.95rem;">
+                    <div style="color:#64748b;">Bắt đầu: <span style="color:#334155; font-weight:600;">${formatSimpleDate(task.ngayBatDau)}</span></div>
+                    <div style="color:#ef4444; font-weight:600; margin-top:4px;">Hạn: ${formatSimpleDate(deadlineStr)}</div>
+                </td>
+                <td style="width:27%;">
+                    <div style="background:#fefce8; border-left:5px solid #eab308; padding:12px; border-radius:10px; font-size:0.92rem; line-height:1.45; color:#854d0e; min-height:68px; box-shadow:0 2px 8px rgba(234,179,8,0.15);">
+                        ${task.ghiChu ? task.ghiChu : '<span style="color:#a3a3a3; font-style:italic;">Không có ghi chú</span>'}
+                    </div>
+                </td>
+            </tr>`;
+    };
+
+    // ==================== HÀM CẬP NHẬT GIAO DIỆN (DYNAMIC) ====================
+    const updateUI = (filteredTasks) => {
+        let total = filteredTasks.length;
+        let completed = 0;
+        let inProgress = 0;
+        let delayed = 0;
+        let notStarted = 0;
+
+        filteredTasks.forEach(task => {
+            const progress = parseInt(task.tienDoHienTai || 0);
+            const deadlineStr = task.ngayKetThuc;
+
+            if (progress === 100) {
+                completed++;
+            } else if (deadlineStr) {
+                const deadline = new Date(deadlineStr);
+                deadline.setHours(0, 0, 0, 0);
+
+                if (deadline < today && progress < 100) {
+                    delayed++;
+                } else if (progress > 0) {
+                    inProgress++;
+                } else {
+                    notStarted++;
+                }
+            } else {
+                notStarted++;
+            }
+        });
+
+        // Ghi đè HTML Thống kê
+        const statsContainer = slideTask.querySelector("#statsContainer");
+        statsContainer.innerHTML = `
+            <div style="background:#fff; padding:10px 20px; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.07); text-align:center; min-width:110px;">
+                <div style="font-size:1.85rem; font-weight:800; color:#1e293b;">${total}</div>
+                <div style="font-size:0.82rem; color:#64748b; font-weight:600; line-height:1.1;">TỔNG CÔNG VIỆC</div>
+            </div>
+            <div style="background:#ecfdf5; padding:10px 20px; border-radius:12px; box-shadow:0 3px 10px rgba(16,185,129,0.15); text-align:center; min-width:110px;">
+                <div style="font-size:1.85rem; font-weight:800; color:#10b981;">${completed}</div>
+                <div style="font-size:0.82rem; color:#065f46; font-weight:600; line-height:1.1;">HOÀN THÀNH</div>
+            </div>
+            <div style="background:#dbeafe; padding:10px 20px; border-radius:12px; box-shadow:0 3px 10px rgba(59,130,246,0.15); text-align:center; min-width:110px;">
+                <div style="font-size:1.85rem; font-weight:800; color:#2563eb;">${inProgress}</div>
+                <div style="font-size:0.82rem; color:#1e40af; font-weight:600; line-height:1.1;">ĐANG THỰC HIỆN</div>
+            </div>
+            <div style="background:#fee2e2; padding:10px 20px; border-radius:12px; box-shadow:0 3px 10px rgba(239,68,68,0.15); text-align:center; min-width:110px;">
+                <div style="font-size:1.85rem; font-weight:800; color:#ef4444;">${delayed}</div>
+                <div style="font-size:0.82rem; color:#991b1b; font-weight:600; line-height:1.1;">CHẬM TIẾN ĐỘ</div>
+            </div>
+            <div style="background:#f1f5f9; padding:10px 20px; border-radius:12px; box-shadow:0 3px 10px rgba(100,116,139,0.15); text-align:center; min-width:110px;">
+                <div style="font-size:1.85rem; font-weight:800; color:#475569;">${notStarted}</div>
+                <div style="font-size:0.82rem; color:#334155; font-weight:600; line-height:1.1;">CHƯA BẮT ĐẦU</div>
+            </div>`;
+
+        // Tính toán hiệu ứng cuộn tự động (Marquee) dựa trên lượng công việc sau khi lọc
+        const taskRows = filteredTasks.map((task, idx) => createTaskRow(task, idx + 1)).join('');
+        const isScrollNeeded = filteredTasks.length > 4;
+        let taskDuration = isScrollNeeded ? Math.max(100, filteredTasks.length * 9) : 80;
+
+        slideTask.setAttribute("data-duration", taskDuration * 1000);
+
+        const tbody = slideTask.querySelector("#taskTableBody");
+        tbody.className = isScrollNeeded ? 'scroll-animate' : '';
+        // Đã sửa lỗi: đồng bộ taskDuration thực tế vào CSS Animation thay vì fix cứng 75s
+        tbody.style.cssText = isScrollNeeded ? `animation: marqueeVertical ${taskDuration}s linear infinite;` : ''; 
+        tbody.innerHTML = taskRows + (isScrollNeeded ? taskRows : '');
+    };
+
+    // Chạy render lần đầu tiên với toàn bộ danh sách dữ liệu
+    updateUI(resTasks);
+
+    // ==================== SỰ KIỆN THAY ĐỔI BỘ LỌC ====================
+    const filterSelect = slideTask.querySelector("#departmentFilter");
+    filterSelect.addEventListener("change", (e) => {
+        const selectedValue = e.target.value;
+        
+        if (selectedValue === "all") {
+            updateUI(resTasks);
+        } else {
+            // Thực hiện lọc chính xác theo trường task.phongBan
+            const filtered = resTasks.filter(task => task.phongBan && task.phongBan.trim() === selectedValue.trim());
+            updateUI(filtered);
+        }
+    });
+
+    container.appendChild(slideTask);
+}
+
+                // --- THỨ TỰ 1: SLIDE QUÂN SỐ ---
+                if (resQuanso.tongquanso != null && (!Array.isArray(resQuanso) || resQuanso.length > 0)) {
+                    const slide1 = document.createElement('div');
+                    slide1.className = 'slide slide-report';
+                    slide1.setAttribute('data-duration', CONFIG.REPORT_DUR * 1000);
+
+                    const formattedPhepNote = resQuanso.phepNote
+                        ? resQuanso.phepNote.split(',').map(item => item.trim()).join('<br>')
+                        : '';
+                    const formattedDate = resQuanso.ngay ? resQuanso.ngay.split('-').reverse().join('/') : '--/--/----';
+
+                    slide1.innerHTML = `
+                    <div class="overlay-content">
+                        <div class="ov-title">BÁO CÁO QUÂN SỐ ${CURRENT_SITE}<br><span style="font-size:1.5rem">NGÀY ${formattedDate}</span></div>
+                        <div class="ov-row">
+                            <div class="ov-item"><div class="ov-label">TỔNG SỐ</div><div class="ov-value">${resQuanso.tongquanso || 0}</div></div>
+                            <div class="ov-item"><div class="ov-label">NGHỈ PHÉP</div><div class="ov-value">${resQuanso.phep || 0}</div></div>
+                            <div class="ov-item"><div class="ov-label">ONLINE</div><div class="ov-value">${resQuanso.online || 0}</div></div>
+                        </div>
+                        ${formattedPhepNote ? `<div class="ov-note">${formattedPhepNote}</div>` : ''}
+                    </div>`;
+                    container.appendChild(slide1);
+                }
+
+                // --- THỨ TỰ 2: LỊCH CÔNG TÁC ---
+                if (Array.isArray(resSched) && resSched.length > 0) {
+                    const isScrollNeeded = resSched.length > 5;
+
+                    const createRow = (item) => {
+                        const rawStatus = (item.TrangThai || item.trangThai || item.status || "").toString();
+                        let statusLabel = "Chưa bắt đầu";
+                        let statusClass = "status-3";
+
+                        if (rawStatus === "1") {
+                            statusLabel = "Đang thực hiện";
+                            statusClass = "status-1";
+                        } else if (rawStatus === "2") {
+                            statusLabel = "Đã hoàn thành";
+                            statusClass = "status-2";
+                        }
+
+                        return `
+                        <tr class="sched-row">
+                            <td class="col-noidung">
+                                <span class="sched-content-title" style="word-break: break-word; white-space: normal;">
+                                    ${item.NoiDung || item.noiDung || "Không có nội dung"}
+                                </span>                                  
+                                <span class="status-badge ${statusClass}">${statusLabel}</span>
+                            </td>
+                            <td class="col-nhansu"><div class="info-box"><i class="fa-solid fa-user-circle"></i> ${item.NhanSu || item.nhanSu || ""}</div></td>
+                            <td class="col-diadiem"><div class="info-box"><i class="fa-solid fa-location-dot" style="color:#ef4444"></i> ${item.DiaDiem || item.diaDiem || ""}</div></td>
+                            <td class="col-thoigian">
+                                <div class="time-container">
+                                    <div class="time-row" style="color: #64748b;">
+                                        <i class="fa-regular fa-clock" style="font-size: 0.85rem;"></i>
+                                        <span style="margin-left: 5px; font-style: italic;">từ</span>
+                                        <span style="color: #475569; margin-left: 6px; font-weight:600;">${formatFullDateTime(item.TuNgay || item.tuNgay)}</span>
+                                    </div>
+                                    <div class="time-row" style="color: #64748b; mt-1">
+                                        <i class="fa-solid fa-arrow-right-long" style="font-size: 0.8rem;"></i>
+                                        <span style="margin-left: 5px; font-style: italic;">đến</span>
+                                        <span style="color: #2563eb; margin-left: 6px; font-weight: 600;">${formatFullDateTime(item.DenNgay || item.denNgay)}</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>`;
+                    };
+
+                    const rawHtml = resSched.map(item => createRow(item)).join('');
+                    const finalBodyHtml = isScrollNeeded ? (rawHtml + rawHtml) : rawHtml;
+
+                    const slide2 = document.createElement('div');
+                    slide2.className = 'slide slide-schedule';
+                    slide2.setAttribute('data-duration', CONFIG.SCHED_DUR * 1000);
+
+                    slide2.innerHTML = `
+                    <h1 class="sched-header"><i class="fa-solid fa-clipboard-list"></i> KẾ HOẠCH CÔNG TÁC</h1>
+                    <table class="sched-table">
+                        <thead>
+                            <tr>
+                                <th class="col-noidung">Nội dung & Trạng thái</th>
+                                <th class="col-nhansu">Nhân sự</th>
+                                <th class="col-diadiem">Địa điểm</th>
+                                <th class="col-thoigian">Thời gian</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div class="sched-body-wrapper">
+                        <table class="sched-table" style="table-layout: fixed; width: 100%;">
+                            <tbody class="${isScrollNeeded ? 'scroll-animate' : ''}">
+                                ${finalBodyHtml}
+                            </tbody>
+                        </table>
+                    </div>`;
+                    container.appendChild(slide2);
+                }
+                if (resMedia && resMedia.length > 0) {
+                    resMedia.sort((a, b) => (a.position || 0) - (b.position || 0));
+                    resMedia.forEach(item => {
+                        const s = document.createElement('div');
+                        s.className = 'slide';
+                        s.setAttribute('data-duration', (item.duration || CONFIG.DEFAULT_DUR));
+
+                        if (item.type === 'image') {
+                            s.innerHTML = `<img src="${item.src}" class="full-screen-img">`;
+                        } else {
+                            // Video - KHÔNG để loop mặc định
+                            s.innerHTML = `
+                                <video src="${item.src}" 
+                                       playsinline 
+                                       style="width:100%; height:100%; object-fit:contain;">
+                                </video>`;
+                        }
+                        container.appendChild(s);
+                    });
+                }
+
+                // --- KÍCH HOẠT HỆ THỐNG SLIDE ---
+                allSlides = container.querySelectorAll('.slide');
+                if (allSlides.length > 0) {
+                    showSlide(0);
+                } else {
+                    console.error("Không tìm thấy dữ liệu hiển thị!");
+                }
+            } catch (err) {
+                console.error("Lỗi khởi tạo slide:", err);
+                setTimeout(() => location.reload(), 10000);
+            }
+        }
+
+                      function showSlide(index) {
+            currentIndex = index;
+            const allSlides = document.querySelectorAll('.slide');
+            if (allSlides.length === 0) return;
+
+            const currentSlide = allSlides[currentIndex];
+
+            // Quản lý tất cả slide
+            allSlides.forEach((s, i) => {
+                const isActive = (i === currentIndex);
+                s.classList.toggle('active', isActive);
+
+                const v = s.querySelector('video');
+                if (v) {
+                    if (isActive) {
+                        v.currentTime = 0;
+                        v.loop = false;
+                        v.muted = false;
+                        v.play().catch(() => {
+                            v.muted = true;
+                            v.play();
+                        });
+                    } else {
+                        v.pause();
+                        v.currentTime = 0;
+                    }
+                }
+            });
+
+            // Animation số cho slide Quân số
+            if (currentSlide.classList.contains('slide-report')) {
+                const values = currentSlide.querySelectorAll('.ov-value');
+                values.forEach(el => {
+                    const target = parseInt(el.textContent) || 0;
+                    let start = 0;
+                    const step = () => {
+                        start += Math.ceil(target / 15);
+                        if (start >= target) el.innerText = target;
+                        else { el.innerText = start; requestAnimationFrame(step); }
+                    };
+                    step();
+                });
+            }
+
+            // Time bar
+            const dur = parseInt(currentSlide.getAttribute('data-duration')) || 8000;
+            const bar = document.getElementById('time-bar');
+            if (bar) {
+                bar.style.transition = 'none';
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.transition = `width ${dur}ms linear`;
+                    bar.style.width = '100%';
+                }, 50);
+            }
+
+            // Xóa timeout cũ
+            clearTimeout(slideTimeout);
+
+            // Chuyển slide sau thời gian quy định (dựa vào data-duration)
+            slideTimeout = setTimeout(() => {
+                if (currentIndex === allSlides.length - 1) {
+                    location.reload();
+                } else {
+                    showSlide(currentIndex + 1);
+                }
+            }, dur);
+        }
+
+        window.onload = initSystem;
+    </script>
+
+</body>
+
+</html>

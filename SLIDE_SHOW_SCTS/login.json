@@ -1,0 +1,22 @@
+[
+  {
+    "ten": "admin",
+    "matkhau": "12345678",
+    "role": "1"
+  },
+  {
+    "ten": "truyenthong",
+    "matkhau": "12345678",
+    "role": "3"
+  },
+  {
+    "ten": "quanso",
+    "matkhau": "12345678",
+    "role": "2"
+  },
+  {
+    "ten": "quanly",
+    "matkhau": "12345678",
+    "role": "4"
+  }
+]

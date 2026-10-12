@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>SLIDE SHOW SCTS - AUTO LOAD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, sans-serif; background: #020617; color: #e5e7eb; overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .slideshow-wrapper { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: radial-gradient(circle at top, #1f2937, #020617); }
+        .slide { position: absolute; inset: 0; opacity: 0; transform: scale(1.03); transition: opacity 1.2s ease-in-out, transform 1.2s ease-in-out; display: flex; align-items: center; justify-content: center; }
+        .slide.active { opacity: 1; transform: scale(1); z-index: 2; }
+        .slide img, .slide video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 18px; box-shadow: 0 40px 80px rgba(15,23,42,0.9), 0 0 80px rgba(59,130,246,0.3); }
+
+        .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .overlay-content { padding: 24px 32px; border-radius: 16px; background: linear-gradient(135deg, rgba(15,23,42,0.88), rgba(30,64,175,0.88)); backdrop-filter: blur(16px); border: 1px solid rgba(148,163,184,0.25); }
+        .overlay-title { font-size: 2rem; font-weight: 700; margin-bottom: 12px; color: #bfdbfe; }
+        .overlay-row { display: flex; gap: 24px; }
+        .time-indicator { position: absolute; left: 50%; bottom: 32px; transform: translateX(-50%); width: 420px; height: 4px; background: rgba(15,23,42,0.85); border-radius: 999px; overflow: hidden; z-index: 3; }
+        .time-indicator-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #22c55e, #eab308, #ef4444); transition: width linear; }
+        .slide-counter { position: absolute; top: 26px; right: 34px; padding: 6px 11px; background: rgba(15,23,42,0.8); border-radius: 999px; border: 1px solid rgba(75,85,99,0.8); z-index: 3; }
+    </style>
+</head>
+<body>
+
+<div class="slideshow-wrapper" id="main-container">
+    <div class="slide active" id="stats-slide">
+        <img src="solieu_view.jpg" alt="Tổng quan">
+        <div class="overlay">
+            <div class="overlay-content">
+                <div class="overlay-title">BÁO CÁO NGÀY <span id="ov-ngay">--</span></div>
+                <div class="overlay-row">
+                    <div><p>Tổng hồ sơ</p><h3 id="ov-tong">0</h3></div>
+                    <div><p>Nghỉ phép</p><h3 id="ov-phep">0</h3></div>
+                    <div><p>Online</p><h3 id="ov-online">0</h3></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="time-indicator"><div class="time-indicator-fill" id="time-bar"></div></div>
+    <div class="slide-counter"><span id="counter-text">1 / 1</span></div>
+</div>
+
+<script src="env.js"></script>
+<script src="common.js"></script>
+<script>
+    const $ = (id) => document.getElementById(id);
+    let currentIndex = 0;
+    let allSlides = [];
+
+    async function loadStats() {
+        try {
+            const data = await (await fetch(ENV.LOCAL.QUANSO)).json();
+            $('ov-ngay').innerText = data.Ngay;
+            $('ov-tong').innerText = data.Tongquanso;
+            $('ov-phep').innerText = data.Phep;
+            $('ov-online').innerText = data.Online;
+        } catch {
+            console.log('Lỗi tải quân số');
+        }
+    }
+
+    async function initSlideshow() {
+        const container = $('main-container');
+        try {
+            const res = await fetch(ENV.API_URL + ENV.API.SCTS_MEDIA_LIST);
+            const data = await res.json();
+
+            data.forEach(item => {
+                const slide = document.createElement('div');
+                slide.className = 'slide';
+                const url = ENV.STATIC_URL + item.fileName;
+                slide.innerHTML = item.type === 'image'
+                    ? `<img src="${url}" alt="${item.fileName}">`
+                    : `<video src="${url}" muted loop></video>`;
+                container.appendChild(slide);
+            });
+            loadStats();
+        } catch (err) {
+            console.error('Lỗi API Media:', err); // vẫn chạy slide số liệu
+        }
+
+        allSlides = container.querySelectorAll('.slide');
+        startRotation();
+    }
+
+    function updateDisplay() {
+        allSlides.forEach((slide, i) => {
+            const active = i === currentIndex;
+            slide.classList.toggle('active', active);
+            const video = slide.querySelector('video');
+            if (video) {
+                if (active) video.play();
+                else { video.pause(); video.currentTime = 0; }
+            }
+        });
+
+        $('counter-text').innerText = `${currentIndex + 1} / ${allSlides.length}`;
+
+        const bar = $('time-bar');
+        bar.style.transition = 'none';
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.transition = `width ${ENV.SLIDE_DURATION}ms linear`;
+            bar.style.width = '100%';
+        }, 50);
+    }
+
+    function startRotation() {
+        updateDisplay();
+        setInterval(() => {
+            currentIndex = (currentIndex + 1) % allSlides.length;
+            updateDisplay();
+        }, ENV.SLIDE_DURATION);
+    }
+
+    window.onload = initSlideshow;
+</script>
+</body>
+</html>

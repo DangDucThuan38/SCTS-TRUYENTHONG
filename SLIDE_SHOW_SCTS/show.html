@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        :root { --primary: #4f46e5; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f8fafc; --text-main: #1e293b; --text-muted: #64748b; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 40px 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        h2 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 2rem; }
+        .notice { background: #fff9db; border-left: 4px solid #fcc419; padding: 12px; margin-bottom: 15px; border-radius: 4px; font-size: 0.9em; color: #856404; }
+        .btn-back { margin-bottom: 20px; padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; }
+        .upload-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; margin-bottom: 12px; align-items: center; }
+        input { padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s; }
+        input:focus { border-color: var(--primary); }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-light { background: #f1f5f9; color: #475569; }
+        .btn-ghost { background: transparent; color: var(--danger); border: 1px solid #fee2e2; }
+        .btn-ghost:hover { background: #fef2f2; }
+        .actions { margin-top: 20px; display: flex; gap: 10px; }
+        #media-list-container { display: flex; flex-direction: column; gap: 12px; }
+        .list-item { display: grid; grid-template-columns: 50px 100px 1fr 180px 100px; align-items: center; background: white; padding: 12px 20px; border-radius: 12px; border: 1px solid #f1f5f9; }
+        .handle { color: #cbd5e1; cursor: grab; font-size: 1.2rem; }
+        .preview-box { width: 80px; height: 50px; border-radius: 6px; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+        .preview-box img, .preview-box video { width: 100%; height: 100%; object-fit: cover; }
+        .file-info b { display: block; font-size: 14px; }
+        .file-info span { font-size: 12px; color: var(--text-muted); }
+        .time-input-group { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+        .time-input-group input { width: 70px; text-align: center; }
+        .empty { text-align: center; padding: 40px; color: #94a3b8; }
+        .sortable-ghost { opacity: 0.4; background: #e0e7ff; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <button class="btn-back" onclick="location.href='home.html'">← Quay lại</button>
+
+    <div class="header-box">
+        <h2><i class="fa-solid fa-cloud-arrow-up" style="color:var(--primary)"></i> Tải lên Media mới</h2>
+    </div>
+    <div class="notice">
+        <i class="fa-solid fa-circle-info"></i> <strong>Lưu ý:</strong> Đối với định dạng hình ảnh, thời gian hiển thị tối đa trên hệ thống là <strong>30 giây</strong>.
+    </div>
+
+    <div class="card">
+        <div id="input-rows"></div>
+        <div class="actions">
+            <button class="btn btn-light" onclick="addNewRow()"><i class="fa-solid fa-plus"></i> Thêm dòng</button>
+            <button class="btn btn-primary" style="flex:1; justify-content:center;" id="btn-upload" onclick="startUpload()">
+                <i class="fa-solid fa-paper-plane"></i> Bắt đầu tải lên hệ thống
+            </button>
+        </div>
+    </div>
+
+    <div class="header-box">
+        <h2><i class="fa-solid fa-layer-group" style="color:var(--warning)"></i> Thứ tự trình chiếu</h2>
+        <button class="btn btn-success" onclick="saveAllSettings()"><i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi</button>
+    </div>
+
+    <div id="media-list-container"></div>
+</div>
+
+<script src="env.js"></script>
+<script src="common.js"></script>
+<script>
+    const DEFAULT_DURATION_MS = 10000;
+    const IMAGE_REGEX = /\.(jpg|jpeg|png|gif)$/i;
+    const inputRows = document.getElementById('input-rows');
+    const listEl = document.getElementById('media-list-container');
+
+    Sortable.create(listEl, { animation: 200, handle: '.handle', ghostClass: 'sortable-ghost' });
+
+    // ----- Dòng upload -----
+    function addNewRow() {
+        const div = document.createElement('div');
+        div.className = 'upload-row';
+        div.innerHTML = `
+            <input type="file" class="file-src" accept="image/*,video/mp4">
+            <input type="text" class="file-name-input" placeholder="Tên hiển thị (không cần đuôi file)">
+            <button class="btn btn-ghost" onclick="removeRow(this)"><i class="fa-solid fa-trash"></i></button>`;
+        inputRows.appendChild(div);
+    }
+
+    function removeRow(btn) {
+        if (inputRows.children.length > 1) btn.closest('.upload-row').remove();
+    }
+
+    // ----- Danh sách media -----
+    const mediaUrl = (src) =>
+        src && !src.startsWith('http') ? ENV.MEDIA_BASE + (src.startsWith('/') ? '' : '/') + src : src;
+
+    function itemHtml(item) {
+        const src = mediaUrl(item.src);
+        const isImg = item.type === 'image' || IMAGE_REGEX.test(item.fileName);
+        const seconds = item.duration >= 1000 ? item.duration / 1000 : item.duration; // ms -> s
+        const preview = isImg
+            ? `<img src="${src}" alt="preview" onerror="this.src='https://placehold.co/80x50?text=Error'">`
+            : `<video src="${src}" muted loop onmouseover="this.play()" onmouseout="this.pause()"></video>`;
+
+        return `
+        <div class="list-item" data-filename="${item.fileName}">
+            <div class="handle"><i class="fa-solid fa-grip-vertical"></i></div>
+            <div class="preview-box">${preview}</div>
+            <div class="file-info"><b>${item.fileName}</b><span>${(item.type || 'Media').toUpperCase()}</span></div>
+            <div class="time-input-group">
+                <i class="fa-regular fa-clock"></i> T/lượng (s):
+                <input type="number" class="input-dur" value="${seconds}">
+            </div>
+            <button class="btn btn-ghost" onclick="deleteFile('${item.fileName}')"><i class="fa-solid fa-xmark"></i> Xóa</button>
+        </div>`;
+    }
+
+    async function loadServerList() {
+        try {
+            const res = await apiFetch(ENV.API.GET_MEDIA);
+            const data = await res.json();
+            listEl.innerHTML = data?.length ? data.map(itemHtml).join('') : '<div class="empty">Thư viện trống</div>';
+        } catch (err) {
+            console.error('Lỗi tải danh sách', err);
+        }
+    }
+
+    // ----- Tải lên -----
+    async function startUpload() {
+        const btn = document.getElementById('btn-upload');
+        const formData = new FormData();
+        let count = 0;
+
+        inputRows.querySelectorAll('.upload-row').forEach((row, i) => {
+            const file = row.querySelector('.file-src').files[0];
+            if (!file) return;
+            const name = row.querySelector('.file-name-input').value;
+            formData.append(`items[${count}].file`, file);
+            formData.append(`items[${count}].FileName`, name || `media_${Date.now()}_${i}`);
+            formData.append(`items[${count}].Position`, count + 1);
+            formData.append(`items[${count}].Duration`, DEFAULT_DURATION_MS);
+            count++;
+        });
+
+        if (!count) return alert('Chọn ít nhất 1 file');
+
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải lên...';
+
+        try {
+            const res = await apiFetch(ENV.API.UPLOAD_MEDIA, { method: 'POST', body: formData });
+            if (res.ok) {
+                alert('Tải lên thành công!');
+                loadServerList();
+            }
+        } catch {
+            alert('Lỗi kết nối server');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }
+    }
+
+    // ----- Lưu thứ tự / thời lượng -----
+    async function saveAllSettings() {
+        const body = [...listEl.querySelectorAll('.list-item')].map((el, i) => ({
+            FileName: el.dataset.filename,
+            Position: i + 1,
+            Duration: Math.round((parseFloat(el.querySelector('.input-dur').value) || 10) * 1000) // s -> ms
+        }));
+
+        try {
+            const res = await apiFetch(ENV.API.UPDATE_MEDIA, { method: 'POST', body });
+            if (res.ok) alert('Đã cập nhật thứ tự trình chiếu!');
+        } catch {
+            alert('Lỗi khi lưu dữ liệu');
+        }
+    }
+
+    async function deleteFile(name) {
+        if (!confirm(`Xóa file ${name}?`)) return;
+        await apiFetch(ENV.API.DELETE_MEDIA(name), { method: 'POST' });
+        loadServerList();
+    }
+
+    addNewRow();
+    loadServerList();
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Trị</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .menu-card { display: none; }          /* chỉ hiện khi đúng quyền */
+        .menu-card.visible { display: flex; }
+        .menu-card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .menu-card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <div class="bg-blue-600 p-1.5 rounded-lg text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+            </div>
+            <span class="font-bold text-slate-800 tracking-tight text-lg">Hệ Thống Quản Trị</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-right hidden sm:block">
+                <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tài khoản</p>
+                <div class="flex items-center gap-2 justify-end">
+                    <p class="text-sm font-bold text-blue-600" id="welcome-msg">Đang tải...</p>
+                    <span id="site-display" class="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded border border-slate-200 uppercase tracking-tighter">---</span>
+                </div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 shadow-sm">
+                <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="flex-grow container mx-auto px-4 py-12 max-w-5xl text-center">
+    <div class="mb-12">
+        <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Bảng Điều Khiển Hệ Thống</h1>
+        <p class="text-slate-500 mt-2">Chọn chức năng bạn muốn quản lý bên dưới</p>
+    </div>
+
+    <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+</main>
+
+<footer class="py-6 text-center text-slate-400 text-xs font-medium uppercase tracking-widest bg-white border-t border-slate-100">
+    &copy; 2026
+</footer>
+
+<script src="env.js"></script>
+<script src="common.js"></script>
+<script>
+    const ICON = {
+        chart: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+        film: 'M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z',
+        users: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+        calendar: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
+    };
+
+    // Cấu hình menu: roles = danh sách role được thấy
+    const MENU = [
+        { href: 'setting.html',       color: 'blue',    icon: ICON.chart,    title: 'Quản lý quân số',    desc: 'Báo cáo, thống kê và cập nhật quân số hàng ngày.',          roles: ['1', '2', '4'] },
+        { href: 'show.html',          color: 'purple',  icon: ICON.film,     title: 'Quản lý Media',      desc: 'Cập nhật hình ảnh, video và nội dung trình chiếu.',         roles: ['1', '3', '4'] },
+        { href: 'listuser.html',      color: 'amber',   icon: ICON.users,    title: 'Quản lý tài khoản',  desc: 'Phân quyền, tạo mới và quản lý thành viên hệ thống.',       roles: ['1'] },
+        { href: 'list-schedule.html', color: 'emerald', icon: ICON.calendar, title: 'Lịch công tác',      desc: 'Theo dõi kế hoạch và lịch trình di chuyển của đơn vị.',     roles: ['1', '2', '4'] },
+        { href: 'work.html',          color: 'emerald', icon: ICON.calendar, title: 'Quản lý công việc',  desc: 'Theo dõi kế hoạch và tiến độ công việc của đơn vị.',        roles: ['1'] }
+        // Đang tắt: { href: 'list-nhanvien.html', color: 'blue', icon: ICON.users, title: 'Quản lý nhân viên', desc: 'Xem danh sách, thông tin chi tiết và điều chỉnh nhân sự.', roles: ['1','3','4'] }
+    ];
+
+    const SITE_COLORS = {
+        SCTS:   ['text-blue-700', 'bg-blue-50', 'border-blue-200'],
+        HLV:    ['text-orange-700', 'bg-orange-50', 'border-orange-200'],
+        SULECO: ['text-emerald-700', 'bg-emerald-50', 'border-emerald-200']
+    };
+
+    const cardHtml = ({ href, color, icon, title, desc }) => `
+        <a href="${href}" class="menu-card visible menu-card-hover bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex-col items-center group text-center">
+            <div class="w-16 h-16 bg-${color}-50 text-${color}-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-${color}-600 group-hover:text-white transition-colors">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icon}"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">${title}</h3>
+            <p class="text-sm text-slate-400">${desc}</p>
+        </a>`;
+
+    const logoutCard = `
+        <button onclick="logout()" class="menu-card-hover bg-red-50 p-8 rounded-3xl border border-red-100 flex flex-col items-center group text-center">
+            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-red-600 group-hover:text-white transition-colors">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold text-red-700 mb-2">Đăng xuất</h3>
+            <p class="text-sm text-red-400">Thoát khỏi phiên làm việc hiện tại.</p>
+        </button>`;
+
+    (function init() {
+        const user = getUser();
+        if (!user) return location.href = 'login.html';
+
+        document.getElementById('welcome-msg').innerText = user.ten;
+
+        const siteEl = document.getElementById('site-display');
+        siteEl.innerText = user.site || 'N/A';
+        const theme = SITE_COLORS[user.site] || ['text-slate-600', 'bg-slate-50', 'border-slate-200'];
+        siteEl.classList.remove('text-slate-500', 'bg-slate-100');
+        siteEl.classList.add(...theme);
+
+        const role = String(user.role);
+        document.getElementById('menu-grid').innerHTML =
+            MENU.filter(m => m.roles.includes(role)).map(cardHtml).join('') + logoutCard;
+    })();
+</script>
+</body>
+</html>

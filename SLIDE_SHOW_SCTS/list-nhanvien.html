@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách Nhân viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .table-card { background: white; border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-6xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+            <button onclick="location.href='home.html'" class="flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors mb-2">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                Về Trang chủ
+            </button>
+            <h1 class="text-2xl font-bold text-slate-800">Danh sách Nhân viên</h1>
+        </div>
+        <a href="save-nhanvien.html" class="flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            Thêm nhân viên mới
+        </a>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-4 mb-6">
+        <div class="relative flex-1">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên nhân viên..."
+                   class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+        </div>
+        <select id="deptFilter" class="px-4 py-2 border border-slate-200 rounded-xl bg-white outline-none"></select>
+    </div>
+
+    <div class="table-card overflow-hidden border border-slate-100">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 border-b border-slate-100">
+                <tr>
+                    <th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase text-center w-12">STT</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Nhân viên</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Ngày sinh</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Phòng ban</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="employeeTableBody" class="divide-y divide-slate-50"></tbody>
+        </table>
+    </div>
+</div>
+
+<script src="env.js"></script>
+<script src="common.js"></script>
+<script>
+    const COLS = 5;
+    const $ = (id) => document.getElementById(id);
+    const tbody = $('employeeTableBody');
+    let employees = [];
+
+    $('deptFilter').innerHTML = optionsHtml(ENV.DEPARTMENTS, 'Tất cả phòng ban');
+
+    const messageRow = (text, color = 'text-slate-400') =>
+        `<tr><td colspan="${COLS}" class="px-6 py-10 text-center ${color}">${text}</td></tr>`;
+
+    async function loadEmployees() {
+        tbody.innerHTML = messageRow('Đang tải dữ liệu...');
+        try {
+            const res = await fetch(ENV.LOCAL.NHANVIEN);
+            if (!res.ok) throw new Error(`Không tìm thấy file ${ENV.LOCAL.NHANVIEN}`);
+            employees = await res.json();
+            applyFilter();
+        } catch (err) {
+            tbody.innerHTML = messageRow(`Lỗi: ${err.message}`, 'text-red-500');
+        }
+    }
+
+    function rowHtml(item, index, today) {
+        const birth = new Date(item.NgaySinh);
+        const isBirthday = birth.getDate() === today.getDate() && birth.getMonth() === today.getMonth();
+        const rowClass = isBirthday ? 'bg-amber-50 border-l-4 border-blue-500' : 'hover:bg-slate-50';
+
+        return `
+        <tr class="${rowClass} transition-all border-b border-slate-100">
+            <td class="px-4 py-4 text-center text-sm text-slate-500 font-mono">${index + 1}</td>
+            <td class="px-6 py-4">
+                <div class="font-semibold text-slate-700">
+                    ${item.HoTen}
+                    ${isBirthday ? '<span class="ml-2 text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">SINH NHẬT</span>' : ''}
+                </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-slate-600">
+                ${pad2(birth.getDate())}/${pad2(birth.getMonth() + 1)}/${birth.getFullYear()}
+                ${isBirthday ? '<span class="ml-2 text-xl">🎂</span>' : ''}
+            </td>
+            <td class="px-6 py-4 text-sm text-slate-600">
+                <span class="px-2 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">${item.PhongBan}</span>
+            </td>
+            <td class="px-6 py-4 text-center">
+                <div class="flex justify-center gap-4">
+                    <a href="save-nhanvien.html?id=${item.Id}" class="text-blue-600 font-medium hover:text-blue-800 transition-colors">Sửa</a>
+                    <button onclick="deleteEmployee('${item.Id}', '${item.HoTen}')" class="text-red-500 font-medium hover:text-red-700 transition-colors">Xóa</button>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    // Lọc trên dữ liệu rồi render lại (không thao tác DOM từng dòng)
+    function applyFilter() {
+        const term = $('searchInput').value.toLowerCase().trim();
+        const dept = $('deptFilter').value;
+        const list = employees.filter(e =>
+            e.HoTen.toLowerCase().includes(term) && (!dept || e.PhongBan === dept));
+
+        const today = new Date();
+        tbody.innerHTML = list.length
+            ? list.map((e, i) => rowHtml(e, i, today)).join('')
+            : messageRow('Danh sách trống.');
+    }
+
+    async function deleteEmployee(id, name) {
+        if (!confirm(`Bạn có chắc chắn muốn xóa nhân viên: ${name}?`)) return;
+        try {
+            const res = await apiFetch(ENV.API.DELETE_NHANVIEN(id), { method: 'DELETE', withSite: false });
+            if (res.ok) {
+                alert('Đã xóa nhân viên thành công!');
+                loadEmployees();
+            } else {
+                const result = await res.json();
+                alert('Lỗi: ' + (result.message || 'Không thể xóa'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Lỗi kết nối Server khi xóa!');
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        $('searchInput').addEventListener('input', applyFilter);
+        $('deptFilter').addEventListener('change', applyFilter);
+        loadEmployees();
+    });
+</script>
+</body>
+</html>
